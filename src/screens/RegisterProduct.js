@@ -1,52 +1,80 @@
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, ScrollView} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
-import {theme} from '../global/styles/theme';
+import { theme } from '../global/styles/theme';
 import WhiteArea from '../components/WhiteArea';
 import Input from '../components/Input';
+import InputImage from '../components/InputImage';
 import Picker from 'react-native-universal-picker';
 import ButtonSecondary from '../components/ButtonSecondary';
 import ButtonPrimary from '../components/ButtonPrimary';
-import {getDatabase, ref, set, push} from 'firebase/database';
+import { getDatabase, ref, set, onValue, push } from 'firebase/database';
 
-export default function RegisterProduct({navigation}) {
+export default function RegisterProduct({ navigation }) {
   const [productName, setProductName] = useState();
   const [price, setPrice] = useState();
   const [placeOfSale, setPlaceOfSale] = useState();
   const [description, setDescription] = useState();
 
-  const [categories, setCategories] = useState([
-    {description: 'BATATAS', id: 1},
-    {description: 'FRUTAS IN NATURA E POLPAS', id: 2},
-    {description: 'LEGUMES', id: 3},
-    {description: 'DERIVADOS DA MANDIOCA', id: 4},
-    {description: 'LEITE, QUEIJO E OUTROS DERIVADOS', id: 5},
-    {description: 'VERDURAS', id: 6},
-    {description: 'CARNES E OVOS', id: 7},
-    {description: 'BEBIDAS', id: 8},
-    {description: 'TEMPEROS', id: 9},
-    {description: 'ÓLEOS', id: 10},
-    {description: 'PÃES', id: 11},
-    {description: 'BISCOITOS E SALGADOS', id: 12},
-  ]);
-  const [selectedCategory, setSelectedCategory] = useState();
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(0);
+  const db = getDatabase();
+  const dbRef = ref(db, 'categories');
 
-  const [formsOfSale, setFormsOfSale] = useState([
-    {description: 'UNIDADE', id: 1},
-    {description: 'KG', id: 2},
-  ]);
+  const [formsOfSale, setFormsOfSale] = useState([]);
   const [selectedFormOfSale, setSelectedFormOfSale] = useState();
+  const dbRefForm = ref(db, 'formsOfSale');
 
-  const [deliveryDay, setDeliveryDay] = useState([
-    {description: 'DOMINGO', id: 1},
-    {description: 'SEGUNDA', id: 2},
-    {description: 'TERÇA', id: 3},
-    {description: 'QUARTA', id: 4},
-    {description: 'QUINTA', id: 5},
-    {description: 'SEXTA', id: 6},
-    {description: 'SÁBADO', id: 7},
-  ]);
+  const [deliveryDay, setDeliveryDay] = useState([]);
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState();
+  const dbRefDay = ref(db, 'deliveryDay');
+
+  const listCategories = async () => {
+    const dataArray = [];
+    await new Promise(resolve => {
+      onValue(dbRef, snapshot => {
+        snapshot.forEach(snap => {
+          dataArray.push(snap.val());
+        });
+        resolve();
+      });
+    });
+    setCategories(dataArray);
+  };
+
+  const listDeliveryDay = async () => {
+    const dataArray = [];
+    await new Promise(resolve => {
+      onValue(dbRefDay, snapshot => {
+        snapshot.forEach(snap => {
+          dataArray.push(snap.val());
+        });
+        resolve();
+      });
+    });
+    setDeliveryDay(dataArray);
+  };
+
+  const listFormsOfSale = async () => {
+    const dataArray = [];
+    await new Promise(resolve => {
+      onValue(dbRefForm, snapshot => {
+        snapshot.forEach(snap => {
+          dataArray.push(snap.val());
+        });
+        resolve();
+      });
+    });
+    setFormsOfSale(dataArray);
+  };
+
+  useEffect(() => {
+    listCategories();
+    listDeliveryDay();
+    listFormsOfSale();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const writeProductData = () => {
     const db = getDatabase();
@@ -74,13 +102,17 @@ export default function RegisterProduct({navigation}) {
         <Text style={styles.addProduct}>Cadastrar produto</Text>
       </View>
       <WhiteArea>
+        <InputImage
+          style={{ marginTop: 44 }}
+        />
+        
         <Input
           placeholder="Nome do produto"
           placeholderTextColor={theme.pallete.primary}
           onChangeText={text => setProductName(text)}
           value={productName}
           keyboardType="default"
-          style={{marginTop: 44}}
+          style={{ marginTop: 12 }}
         />
         <Input
           placeholder="Preço"
@@ -88,7 +120,7 @@ export default function RegisterProduct({navigation}) {
           onChangeText={text => setPrice(text)}
           value={price}
           keyboardType="numeric"
-          style={{marginTop: 16}}
+          style={{ marginTop: 16 }}
         />
         <Input
           placeholder="Local de venda"
@@ -96,7 +128,7 @@ export default function RegisterProduct({navigation}) {
           onChangeText={text => setPlaceOfSale(text)}
           value={placeOfSale}
           keyboardType="default"
-          style={{marginTop: 16}}
+          style={{ marginTop: 16 }}
         />
         <Input
           placeholder="Descrição"
@@ -129,13 +161,12 @@ export default function RegisterProduct({navigation}) {
           <Picker
             style={styles.txtPicker}
             selectedValue={selectedFormOfSale}
-            onValueChange={(itemValue, item) =>
-              setSelectedFormOfSale(itemValue)
+            onValueChange={(itemValue, item) => setSelectedFormOfSale(itemValue)
             }>
             {formsOfSale.map(forms => {
               return (
                 <Picker.Item
-                  label={forms.description}
+                  label={forms.description.toLowerCase()}
                   value={forms.description}
                 />
               );
@@ -148,13 +179,13 @@ export default function RegisterProduct({navigation}) {
           <Picker
             style={styles.txtPicker}
             selectedValue={selectedDeliveryDay}
-            onValueChange={(itemValue, item) =>
+            onValueChange={(itemValue, itemIndex) =>
               setSelectedDeliveryDay(itemValue)
             }>
             {deliveryDay.map(delivery => {
               return (
                 <Picker.Item
-                  label={delivery.description}
+                  label={delivery.description.toLowerCase()}
                   value={delivery.description}
                 />
               );
@@ -162,7 +193,7 @@ export default function RegisterProduct({navigation}) {
           </Picker>
         </View>
 
-        <View style={{marginTop: 30}} />
+        <View style={{ marginTop: 24 }} />
         <ButtonPrimary onPress={() => writeProductData()}>
           CADASTRAR
         </ButtonPrimary>
@@ -186,7 +217,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   inputDescription: {
-    paddingVertical: 60,
+    paddingVertical: 36,
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
     marginTop: 16,
@@ -209,6 +240,6 @@ const styles = StyleSheet.create({
     borderEndColor: theme.pallete.primary,
     height: '100%',
     width: '100%',
-    color: theme.pallete.red,
+    color: theme.pallete.black,
   },
 });
