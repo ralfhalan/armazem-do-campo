@@ -1,50 +1,30 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
-import { theme } from '../global/styles/theme';
+import React, {useState} from 'react';
+import {View, StyleSheet, TouchableOpacity, Text, Image} from 'react-native';
+import {theme} from '../global/styles/theme';
 import * as ImagePicker from 'react-native-image-picker';
-
-
 
 const InputImage = props => {
   const [avatar, setAvatar] = useState();
 
-  function imagePickerCallback(data) {
-    if (data.didCancel) {
-      return;
-    }
-    else if (data.errorCode) {
-      return;
-    }
-    else if (data.errorMessage) {
-      return;
-    }
-    else if (!data.uri) { 
-      console.log('uri')
-      return;
-    }
-    else if (data.assets) {
-      return;
-    }
-    else{
-    console.log('passou pela data')
-    setAvatar(data);
-    }
-  }
 
   return (
-    <View style={styles.container} >
+    <View style={styles.container}>
       <TouchableOpacity
         {...props}
         style={[styles.button, props.style]}
-        onPress={() => ImagePicker.launchImageLibrary({}, imagePickerCallback)}>
+        onPress={() =>
+          ImagePicker.launchImageLibrary({}, data => {
+            setAvatar(data.assets[0].uri);
+          })
+        }>
         <Text style={styles.buttonText}> Escolher imagem </Text>
       </TouchableOpacity>
-      <View style={{ paddingLeft: 12 }} />
+      <View style={{paddingLeft: 12}} />
       <Image
         source={{
-          uri: avatar 
-          ? avatar.uri 
-          :  "https://images-americanas.b2w.io/produtos/1368573253/imagens/super-caixa-12-pedras-de-protecao-e-purificacao/1368573309_1_large.jpg"     
+          uri: avatar
+            ? avatar
+            : 'https://images-americanas.b2w.io/produtos/1368573253/imagens/super-caixa-12-pedras-de-protecao-e-purificacao/1368573309_1_large.jpg',
         }}
         style={styles.image}
       />
@@ -57,7 +37,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
   },
   button: {
     borderColor: theme.pallete.primary,
@@ -75,15 +55,14 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'Roboto-Medium',
     color: theme.pallete.white,
-    fontSize: 16
+    fontSize: 16,
   },
   image: {
     width: 76,
     height: 76,
     borderRadius: 38,
     marginTop: 20,
-  }
-
+  },
 });
 
 export default InputImage;
